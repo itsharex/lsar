@@ -6,7 +6,7 @@ use tokio::sync::Mutex;
 use tracing::Level;
 use tracing_subscriber::fmt::time::OffsetTime;
 
-use crate::{config::Config, eval::EvalChannel};
+use crate::eval::EvalChannel;
 
 pub fn setup_logging() {
     let fmt = if cfg!(debug_assertions) {
@@ -56,6 +56,7 @@ pub fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>>
 
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     {
+        use crate::config::Config;
         let config = Config::read_from_file()?;
         let window = create_main_window(app.app_handle(), config.transparent)?;
         if config.transparent {
