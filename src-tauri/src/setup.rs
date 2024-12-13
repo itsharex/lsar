@@ -55,13 +55,14 @@ pub fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>>
     setup_updater(app)?;
 
     let config = Config::read_from_file()?;
-    let window = create_main_window(app.app_handle(), config.transparent)?;
 
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
-    {
+    if cfg!(any(target_os = "macos", target_os = "windows")) {
+        let window = create_main_window(app.app_handle(), config.transparent)?;
         if config.transparent {
             apply_window_effect(window)?;
         }
+    } else {
+        create_main_window(app.app_handle(), config.transparent)?;
     }
 
     let eval_channel = EvalChannel {
@@ -98,7 +99,7 @@ fn apply_window_effect(window: WebviewWindow) -> Result<(), Box<dyn std::error::
     {
         info!("Applying vibrancy effect on macOS");
         use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
-        window.set_title_bar_style(tauri::utils::TitleBarStyle::Overlay);
+        window.set_title_bar_style(tauri::utils::TitleBarStyle::Overlay)?;
         apply_vibrancy(&window, NSVisualEffectMaterial::HudWindow, None, None)?;
     }
 
