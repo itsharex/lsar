@@ -1,3 +1,10 @@
+<p align="center">
+<img height="64" width="64" src="./src-tauri/icons/128x128.png" />
+<br/>
+<a href="https://github.com/alley-rs/lsar/releases/latest"><img src="https://img.shields.io/github/downloads/alley-rs/lsar/total.svg?style=flat-square" alt="GitHub releases"></a>
+</p>
+
+
 # LSAR
 
 图形化的直播解析器。
