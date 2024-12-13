@@ -36,6 +36,12 @@ pub struct Config {
     dark_mode: DarkMode,
     player: Player,
     platform: Platform,
+    #[serde(default = "default_transparent")]
+    pub transparent: bool,
+}
+
+fn default_transparent() -> bool {
+    true
 }
 
 impl Config {
@@ -60,42 +66,49 @@ impl Config {
             }
         }
     }
+
+    pub fn read_from_file() -> LsarResult<Config> {
+        // 防止用户在启动程序后删除配置文件引发异常
+        if !CONFIG_FILE_PATH.exists() {
+            debug!("Config file not found, creating default config");
+            let default_config = Config {
+                transparent: default_transparent(),
+                ..Default::default()
+            };
+            let config = toml::to_string(&default_config).map_err(|e| {
+                error!("Failed to serialize default config: {:?}", e);
+                e
+            })?;
+            std::fs::write(&*CONFIG_FILE_PATH, config).map_err(|e| {
+                error!("Failed to write default config file: {:?}", e);
+                e
+            })?;
+            info!("Created and wrote default config file");
+            return Ok(default_config);
+        }
+
+        debug!("Reading config file from: {:?}", *CONFIG_FILE_PATH);
+        let data = std::fs::read_to_string(&*CONFIG_FILE_PATH).map_err(|e| {
+            error!("Failed to read config file: {:?}", e);
+            e
+        })?;
+
+        let config: Config = toml::from_str(&data).map_err(|e| {
+            error!("Failed to deserialize config file: {:?}", e);
+            e
+        })?;
+
+        info!("Successfully read and parsed config file");
+
+        Ok(config)
+    }
 }
 
 static CONFIG_FILE_PATH: LazyLock<PathBuf> = LazyLock::new(|| APP_CONFIG_DIR.join("lsar.toml"));
 
 #[tauri::command]
 pub async fn read_config_file() -> LsarResult<Config> {
-    // 防止用户在启动程序后删除配置文件引发异常
-    if !CONFIG_FILE_PATH.exists() {
-        debug!("Config file not found, creating default config");
-        let default_config = Config::default();
-        let config = toml::to_string(&default_config).map_err(|e| {
-            error!("Failed to serialize default config: {:?}", e);
-            e
-        })?;
-        fs::write(&*CONFIG_FILE_PATH, config).await.map_err(|e| {
-            error!("Failed to write default config file: {:?}", e);
-            e
-        })?;
-        info!("Created and wrote default config file");
-        return Ok(default_config);
-    }
-
-    debug!("Reading config file from: {:?}", *CONFIG_FILE_PATH);
-    let data = fs::read_to_string(&*CONFIG_FILE_PATH).await.map_err(|e| {
-        error!("Failed to read config file: {:?}", e);
-        e
-    })?;
-
-    let config: Config = toml::from_str(&data).map_err(|e| {
-        error!("Failed to deserialize config file: {:?}", e);
-        e
-    })?;
-
-    info!("Successfully read and parsed config file");
-
-    Ok(config)
+    Config::read_from_file()
 }
 
 #[tauri::command]

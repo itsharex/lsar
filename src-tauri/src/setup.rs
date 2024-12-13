@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use tauri::Manager;
+use tauri::{Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use time::macros::{format_description, offset};
 use tokio::sync::Mutex;
 use tracing::Level;
 use tracing_subscriber::fmt::time::OffsetTime;
 
-use crate::eval::EvalChannel;
+use crate::{config::Config, eval::EvalChannel};
 
 pub fn setup_logging() {
     let fmt = if cfg!(debug_assertions) {
@@ -54,8 +54,15 @@ pub fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>>
     #[cfg(all(desktop, not(debug_assertions)))]
     setup_updater(app)?;
 
+    let config = Config::read_from_file()?;
+    let window = create_main_window(app.app_handle(), config.transparent)?;
+
     #[cfg(any(target_os = "macos", target_os = "windows"))]
-    apply_window_effect(app)?;
+    {
+        if config.transparent {
+            apply_window_effect(window)?;
+        }
+    }
 
     let eval_channel = EvalChannel {
         sender: Arc::new(Mutex::new(None)),
@@ -86,15 +93,12 @@ fn setup_updater(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>>
 }
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
-fn apply_window_effect(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    use tauri::Manager;
-
-    let window = app.get_webview_window("main").unwrap();
-
+fn apply_window_effect(window: WebviewWindow) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "macos")]
     {
         info!("Applying vibrancy effect on macOS");
         use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
+        window.set_title_bar_style(tauri::utils::TitleBarStyle::Overlay);
         apply_vibrancy(&window, NSVisualEffectMaterial::HudWindow, None, None)?;
     }
 
@@ -106,4 +110,47 @@ fn apply_window_effect(app: &tauri::App) -> Result<(), Box<dyn std::error::Error
     }
 
     Ok(())
+}
+
+pub fn create_main_window(
+    app: &tauri::AppHandle,
+    transparent: bool,
+) -> Result<WebviewWindow, Box<dyn std::error::Error>> {
+    trace!("Initializing main application window");
+
+    // Define window configuration parameters
+    const WINDOW_TITLE: &str = "lsar";
+    const WINDOW_WIDTH: f64 = 800.0;
+    #[cfg(target_os = "macos")]
+    const WINDOW_HEIGHT: f64 = 628.0;
+    #[cfg(not(target_os = "macos"))]
+    const WINDOW_HEIGHT: f64 = 600.0;
+
+    info!(
+        "Configuring window: title={}, dimensions={}x{}",
+        WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT
+    );
+
+    let window_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
+        .title(WINDOW_TITLE)
+        .resizable(false)
+        .maximizable(false)
+        .transparent(transparent)
+        .visible(false)
+        .inner_size(WINDOW_WIDTH, WINDOW_HEIGHT);
+
+    // Attempt to build the window
+    match window_builder.build() {
+        Ok(w) => {
+            info!("Main application window created successfully");
+            Ok(w)
+        }
+        Err(build_error) => {
+            error!(
+                "Failed to create main window: {}. Detailed error: {:?}",
+                build_error, build_error
+            );
+            Err(build_error.into())
+        }
+    }
 }

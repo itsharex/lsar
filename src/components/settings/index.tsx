@@ -1,4 +1,4 @@
-import { open } from "@tauri-apps/plugin-dialog";
+import { ask, open } from "@tauri-apps/plugin-dialog";
 import { createEffect, createSignal, Show, useContext } from "solid-js";
 import { getPlayerPaths, writeConfigFile } from "~/command";
 import { AppContext } from "~/context";
@@ -12,6 +12,8 @@ import {
   LazyTextArea,
 } from "~/lazy";
 import DarkMode from "./DarkMode";
+import Transparent from "./Transparent";
+import { relaunch } from "@tauri-apps/plugin-process";
 
 const Settings = () => {
   const [
@@ -27,6 +29,7 @@ const Settings = () => {
   createEffect(() => setLsarConfig(defaultConfig()));
 
   createEffect(async () => {
+    console.log(lsarConfig());
     if (!defaultConfig() || defaultConfig()?.player.path !== "") return;
 
     const paths = await getPlayerPaths();
@@ -88,10 +91,26 @@ const Settings = () => {
   return (
     <LazyDialog
       show={showSettings() || !defaultConfig()?.player.path}
-      onClose={() => {}}
+      onClose={() => { }}
       maskClosable={false}
     >
       <LazyFlex direction="vertical" gap={8} style={{ "min-width": "400px" }}>
+        <Transparent
+          enabled={!!lsarConfig()?.transparent}
+          onSwitch={async (enabled) => {
+            const newConfig = {
+              ...lsarConfig()!,
+              transparent: enabled,
+            };
+            setLsarConfig(newConfig);
+            await writeConfigFile(newConfig);
+            const ok = await ask(
+              "透明度修改后需重启本软件才能生效，是否立即重启？",
+            );
+            if (ok) relaunch();
+          }}
+        />
+
         <DarkMode
           mode={lsarConfig()?.dark_mode || "system"}
           onChoice={(mode) =>
