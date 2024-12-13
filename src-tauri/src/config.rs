@@ -6,6 +6,15 @@ use tokio::fs;
 use crate::{error::LsarResult, global::APP_CONFIG_DIR};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+enum DarkMode {
+    Dark,
+    Light,
+    #[default]
+    System,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
 struct Player {
     path: PathBuf,
     args: Vec<String>,
@@ -23,6 +32,8 @@ struct Platform {
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Config {
+    #[serde(default)]
+    dark_mode: DarkMode,
     player: Player,
     platform: Platform,
 }
