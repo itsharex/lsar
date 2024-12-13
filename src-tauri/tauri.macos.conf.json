@@ -1,16 +1,5 @@
 {
   "app": {
-    "windows": [
-      {
-        "title": "lsar",
-        "width": 800,
-        "height": 628,
-        "titleBarStyle": "Overlay",
-        "transparent": true,
-        "resizable": false,
-        "maximizable": false,
-        "visible": false
-      }
-    ]
+    "windows": []
   }
 }

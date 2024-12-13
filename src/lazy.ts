@@ -69,3 +69,7 @@ export const LazyAlert = lazy(
 export const LazyDropDown = lazy(
   () => import("alley-components/lib/components/dropdown"),
 );
+
+export const LazySwitch = lazy(
+  () => import("alley-components/lib/components/switch"),
+);

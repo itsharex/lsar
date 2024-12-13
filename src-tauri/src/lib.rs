@@ -52,6 +52,7 @@ async fn show_main_window(app: AppHandle) {
     let main_window = app.get_webview_window("main").unwrap();
 
     main_window.show().unwrap();
+    main_window.set_focus().unwrap();
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -65,6 +66,7 @@ pub fn run() {
     info!("Initializing application");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             if let Some(w) = app.get_webview_window("main") {
                 info!("Application instance already running, focusing existing window");
