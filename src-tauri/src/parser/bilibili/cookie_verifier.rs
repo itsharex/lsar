@@ -2,7 +2,7 @@ use reqwest::Client;
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::error::LsarResult;
+use crate::error::{LsarError, LsarResult};
 
 const VERIFY_URL: &str = "https://api.bilibili.com/x/web-interface/nav";
 
@@ -37,9 +37,17 @@ impl<'a> CookieVerifier<'a> {
             .get(VERIFY_URL)
             .header("Cookie", self.cookie)
             .send()
-            .await?
+            .await
+            .map_err(|e| {
+                error!("Failed to send reqeust: {:?}", e);
+                LsarError::Other("Cookie is invalid".to_owned())
+            })?
             .json::<Value>()
-            .await?;
+            .await
+            .map_err(|e| {
+                error!("Failed to deserialize response: {}", e);
+                e
+            })?;
 
         debug!("Cookie verification result: {}", response_value);
 
