@@ -11,6 +11,7 @@ import {
   LazyText,
   LazyTextArea,
 } from "~/lazy";
+import DarkMode from "./DarkMode";
 
 const Settings = () => {
   const [
@@ -87,10 +88,23 @@ const Settings = () => {
   return (
     <LazyDialog
       show={showSettings() || !defaultConfig()?.player.path}
-      onClose={() => { }}
+      onClose={() => {}}
       maskClosable={false}
     >
       <LazyFlex direction="vertical" gap={8} style={{ "min-width": "400px" }}>
+        <DarkMode
+          mode={lsarConfig()?.dark_mode || "system"}
+          onChoice={(mode) =>
+            setLsarConfig(
+              (prev) =>
+                prev && {
+                  ...prev,
+                  dark_mode: mode,
+                },
+            )
+          }
+        />
+
         <LazySpace>
           <LazyLabel>播放器绝对路径</LazyLabel>
 

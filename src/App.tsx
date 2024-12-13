@@ -9,6 +9,7 @@ import Result from "./components/result";
 import "./App.scss";
 import About from "./components/about";
 import { AiFillSetting } from "solid-icons/ai";
+import { useDarkMode } from "./hooks/useDarkMode";
 
 const TitleBar =
   import.meta.env.TAURI_ENV_PLATFORM === "darwin"
@@ -30,6 +31,8 @@ const App = () => {
   onMount(() => {
     showMainWindow();
   });
+
+  useDarkMode(config);
 
   const onClickSettingsButton = () => setShowSettings(true);
 

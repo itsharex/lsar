@@ -65,3 +65,7 @@ export const LazyToast = lazy(
 export const LazyAlert = lazy(
   () => import("alley-components/lib/components/alert"),
 );
+
+export const LazyDropDown = lazy(
+  () => import("alley-components/lib/components/dropdown"),
+);
