@@ -54,15 +54,18 @@ pub fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>>
     #[cfg(all(desktop, not(debug_assertions)))]
     setup_updater(app)?;
 
-    let config = Config::read_from_file()?;
-
-    if cfg!(any(target_os = "macos", target_os = "windows")) {
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    {
+        let config = Config::read_from_file()?;
         let window = create_main_window(app.app_handle(), config.transparent)?;
         if config.transparent {
             apply_window_effect(window)?;
         }
-    } else {
-        create_main_window(app.app_handle(), config.transparent)?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        create_main_window(app.app_handle())?;
     }
 
     let eval_channel = EvalChannel {
@@ -115,7 +118,7 @@ fn apply_window_effect(window: WebviewWindow) -> Result<(), Box<dyn std::error::
 
 pub fn create_main_window(
     app: &tauri::AppHandle,
-    transparent: bool,
+    #[cfg(any(target_os = "windows", target_os = "macos"))] transparent: bool,
 ) -> Result<WebviewWindow, Box<dyn std::error::Error>> {
     trace!("Initializing main application window");
 
@@ -136,12 +139,17 @@ pub fn create_main_window(
         .title(WINDOW_TITLE)
         .resizable(false)
         .maximizable(false)
-        .transparent(transparent)
         .visible(false)
         .inner_size(WINDOW_WIDTH, WINDOW_HEIGHT);
 
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    let window = window_builder.transparent(transparent).build();
+
+    #[cfg(target_os = "linux")]
+    let window = window_builder.build();
+
     // Attempt to build the window
-    match window_builder.build() {
+    match window {
         Ok(w) => {
             info!("Main application window created successfully");
             Ok(w)
